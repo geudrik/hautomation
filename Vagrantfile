@@ -31,7 +31,7 @@ Vagrant.configure(2) do |config|
     end
 
     web.vm.provision :shell, path: "provision/bootstrap_ansible.sh"
-#    web.vm.provision :shell, path: "provision/bootstrap_playbooks.sh", privileged: false
-#    web.vm.provision :shell, inline: "PYTHONUNBUFFERED=1 ansible-playbook ~/hautomation-playbooks/pb_hautomation.yml -i ~/hautomation-playbooks/inventory/hautomation_vagrant -c local", privileged: false
+    web.vm.provision :shell, path: "provision/bootstrap_playbooks.sh", privileged: false
+    web.vm.provision :shell, inline: "PYTHONUNBUFFERED=1 ansible-playbook ~/hautomation-playbooks/pb_hautomation.yml -i ~/hautomation-playbooks/inventory/hautomation_vagrant -c local", privileged: false
   end
 end
