@@ -1,6 +1,7 @@
 #! /usr/bin/env python2.7
 # -*- coding: latin-1 -*-
 
+from flask import g
 from flask import Flask
 from flask import url_for
 from flask import request
@@ -8,7 +9,7 @@ from flask import session
 from flask import jsonify
 from flask import redirect
 from flask import current_app
-from flask import g
+from flask import render_template
 
 from flask_login import LoginManager
 from flask_login import login_user
@@ -21,12 +22,15 @@ from flask_principal import Identity
 from flask_principal import identity_loaded
 from flask_principal import identity_changed
 
+from auth import admin_permission
+
 import os
 import sys
 import time
 import json
 import redis
 import logging
+import traceback
 
 from config import STATIC_FOLDER
 
@@ -281,7 +285,7 @@ def configure_hooks(application):
 
 def configure_handlers(application):
     """
-    Configure error handlers, for good measure.
+    Configure generic error handlers, for good measure.
     TODO: We need to add in UI vs. JSON responses depending on the context of the request being made
     args:
         application: our flask app
@@ -299,12 +303,12 @@ def configure_handlers(application):
     @application.errorhandler(403)
     def error_403(err):
         current_app.logger.error("403 : {0} | {1}".format(request.url, err))
-        return jsonify({'message':'{0}'.format(err)}), 403
+        return render_template("error/403.html"), 403
 
     @application.errorhandler(404)
     def error_404(err):
         current_app.logger.error("404 : {0} | {1}".format(request.url, err))
-        return jsonify({'message':'{0}'.format(err)}), 404
+        return render_template("error/404.html"), 404
 
     @application.errorhandler(405)
     def error_405(err):
@@ -314,6 +318,19 @@ def configure_handlers(application):
     @application.errorhandler(Exception)
     @application.errorhandler(500)
     def error_500(err):
-        current_app.logger.exception(err)
-        current_app.logger.error("500 : {0} | {1}".format(request.url, err))
-        return jsonify({'message':'{0}'.format(err)}), 500
+
+        # Trim the fat out of our request object
+        extra = dict(request.headers.__dict__['environ'])
+        for key in extra.keys():
+            if key.startswith('werkzeug') or key.startswith('wsgi') or key.startswith('mod_wsgi'):
+                del(extra[key])
+
+        # Log our exception
+        current_app.logger.exception(err, extra=extra)
+
+        # See if this is an admin user. If yes, dump the stacktrace
+        debug = None
+        if admin_permission.can():
+            debug = traceback.format_exc()
+
+        return render_template("error/500.html", debug=debug), 500
