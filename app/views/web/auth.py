@@ -10,6 +10,7 @@ from flask import url_for
 from flask import jsonify
 from flask import session
 from flask import abort
+from flask import flash
 
 from flask_login import login_required
 from flask_login import logout_user
@@ -58,20 +59,23 @@ def login():
     password = request.form.get('password', None)
 
     if not username or not password:
-        return jsonify({'message':"Invalid username/password"}), 400
+        flash("You're bad at this game. Enter a username and password to log in")
+        return render_template("login.html"), 400
 
     # Ensure that we're working with utf8 strings as hashlib doesn't accept unicode
     try:
         username = username.encode('utf-8')
         password = password.encode('utf-8')
     except TypeError:
-        return jsonify({'message':'Submitted strings must be within the utf-8 character set'})
+        flash("You're bad at this game. The username and/or password you entered isn't within the UTF-8 character set. Try again...")
+        return render_template("login.html"), 400
 
     # Attempt to get a user object
     current_app.logger.debug("Attempting to instantiate User object for {}".format(username))
     user = User.filter_by(username=username).first()
     if not user:
-        return jsonify({'message':"Invalid username/password"}), 400
+        flash("Invalid username/password")
+        return render_template("login.html"), 400
 
     # Set our hashing args
     rounds = current_app.config['ARGON2_ROUNDS']
@@ -87,7 +91,8 @@ def login():
     current_app.logger.info("Attempting to pull password row for {}".format(user.username))
     pw = Password.filter_by(hashed_password=bytearray(argon2_hash(password, user.password_salt, t=rounds, m=memory))).first()
     if not pw:
-        return jsonify({'message':"Invalid username/password"}), 400
+        flash("Invalid username/password")
+        return render_template("login.html"), 400
 
     # If this is an admin first-login, force pass change
     if username == "admin" and pw and user and user.time == user.timestamp:
@@ -132,14 +137,16 @@ def admin_first_login():
     password1 = request.form.get('password', None)
     password2 = request.form.get('password_confirm', None)
     if not password1 or not password2 or password1 != password2:
-        return jsonify({'message':"New passwords either didn't match or not submitted"}), 400
+        flash("Passwords did not match. Try harder.")
+        return render_template("login.html"), 400
 
     # Ensure that we're working with utf8 strings as hashlib doesn't accept unicode
     try:
         password1 = password1.encode('utf-8')
         password2 = password2.encode('utf-8')
     except TypeError:
-        return jsonify({'message':'Submitted strings must be within the utf-8 character set'})
+        flash("The submitted passwords don't fall within the UTF-8 character set. Try again...")
+        return render_template("login.html"), 400
 
     # Looks like this is in fact a prelim admin password change. Change it, update
     #   timestamp, and log the user out (force a re-auth). Note that this _ALSO_
