@@ -27,6 +27,17 @@
           <section class="login_content">
             <form action="{{ url_for('auth.admin_first_login') }}" method="POST">
               <h1>Set Admin Password</h1>
+
+              {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                  {% for message in messages %}
+                    <div class="alert alert-danger" role="alert">
+                      {{ message }}
+                    </div>
+                  {% endfor %}
+                {% endif %}
+              {% endwith %}
+
               <div>
                 <input type="password" name="password" class="form-control" placeholder="New Password" required="" />
               </div>
