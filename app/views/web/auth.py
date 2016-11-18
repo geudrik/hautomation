@@ -33,6 +33,7 @@ import os
 
 auth = Blueprint("auth", __name__, url_prefix="/auth")
 
+@auth.route("/logout/", methods=["GET"])
 @auth.route("/logout", methods=["GET"])
 @login_required
 def logout():
@@ -42,13 +43,14 @@ def logout():
 
     # Remove Flask-Principal set session keys (for good measure)
     for k in ('identity.name', 'identity.auth_time'):
-        session.pop(key, None)
+        session.pop(k, None)
 
     # Change the current user in Flask-Principal to an anonymous user
     identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
 
     return redirect(url_for('auth.login'))
 
+@auth.route("/login/", methods=["GET", "POST"])
 @auth.route("/login", methods=["GET", "POST"])
 def login():
 
@@ -115,6 +117,7 @@ def login():
     # Send the user on their way
     return redirect(url_for("homestack.home"))
 
+@auth.route("/admin-first-login/", methods=["GET", "POST"])
 @auth.route("/admin-first-login", methods=["GET", "POST"])
 @admin_permission.require()
 def admin_first_login():
