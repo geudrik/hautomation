@@ -329,7 +329,7 @@ def configure_handlers(application):
         current_app.logger.exception(err, extra=extra)
 
         # See if this is an admin user. If yes, dump the stacktrace
-        debug = None
+        debug = False
         if admin_permission.can():
             debug = traceback.format_exc()
 
