@@ -48,5 +48,5 @@ flask-principal
 flask-login
 redis
 sqlalchemy
-passlib
+argon2
 ```

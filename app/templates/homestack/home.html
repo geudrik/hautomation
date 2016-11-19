@@ -1,4 +1,12 @@
 {% extends "base.html" %}
+
+{% block page_css %}
+{% endblock %}
+
+{% block page_js %}
+<script src="{{ url_for('static', filename='js/pages/home.js') }}"></script>
+{% endblock %}
+
 {% block body_content %}
         <!-- page content -->
         <div class="right_col" role="main">
@@ -12,16 +20,26 @@
 
             <div class="clearfix"></div>
 
-
             <div class="col-md-6 col-sm-6 col-xs-12">
                 <div class="x_panel">
                   <div class="x_title">
-                    <h2><i class="fa fa-bars"></i> My API Keys</h2>
+                    <h2><i class="fa fa-key"></i> My API Keys</h2>
+                    <span class="pull-right"><button id="button-new-api-key" class="btn btn-xs btn-success">Create New API Key</button></span>
                     <div class="clearfix"></div>
                   </div>
                   <div class="x_content">
-
-                    <p>Raw denim you probably haven't</p>
+                  <p>Click on a description to change its name. Naturally, click the X next to a key to delete that key</p>
+                    <table class="table" id="table-api-keys">
+                      <thead>
+                        <tr>
+                          <th width="15px"></th>
+                          <th width="285px"></th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      </tbody>
+                    </table>
 
                   </div>
                 </div>

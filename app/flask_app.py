@@ -129,11 +129,13 @@ def configure_blueprints(application):
     """
     from views.web.homestack import homestack
     from views.web.auth import auth
+    from views.api.users import users
 
     # Make life easy on ourselves
     blueprints = [
         homestack,
-        auth
+        auth,
+        users
     ]
     for bp in blueprints:
         application.register_blueprint(bp)
@@ -220,7 +222,7 @@ def configure_hooks(application):
 
         # Boolean we track in `g` to see if we're requesting JSON be returned
         g.json = False
-        if 'application/json' in request.headers.get('ACCEPT', []):
+        if 'application/json' in request.headers.get('ACCEPT', []) or request.path.startswith("/api"):
             g.json = True
 
         # Add a redis connection to g
@@ -303,11 +305,15 @@ def configure_handlers(application):
     @application.errorhandler(403)
     def error_403(err):
         current_app.logger.error("403 : {0} | {1}".format(request.url, err))
+        if g.json:
+            return jsonify({})
         return render_template("error/403.html"), 403
 
     @application.errorhandler(404)
     def error_404(err):
         current_app.logger.error("404 : {0} | {1}".format(request.url, err))
+        if g.json:
+            return jsonify({})
         return render_template("error/404.html"), 404
 
     @application.errorhandler(405)
@@ -333,4 +339,6 @@ def configure_handlers(application):
         if admin_permission.can():
             debug = traceback.format_exc()
 
+        if g.json:
+            return jsonify({}), 500
         return render_template("error/500.html", debug=debug), 500
