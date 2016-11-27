@@ -22,6 +22,7 @@ from flask_principal import Identity
 from flask_principal import identity_loaded
 from flask_principal import identity_changed
 
+from auth import map_api_key_to_user
 from auth import admin_permission
 
 import os
@@ -148,15 +149,16 @@ def configure_blueprints(application):
     # Hack and slash route to show a "sitemap"
     @application.route("/sitemap", methods=['GET'])
     def sitemap():
+        methods = ['GET', 'POST', 'PUT', 'UPDATE', 'DELETE']
         links = []
         def has_no_empty_params(rule):
             defaults = rule.defaults if rule.defaults is not None else ()
             arguments = rule.arguments if rule.arguments is not None else ()
             return len(defaults) >= len(arguments)
         for rule in application.url_map.iter_rules():
-            if "GET" in rule.methods and has_no_empty_params(rule):
+            if any(x in methods for x in rule.methods) and has_no_empty_params(rule):
                 url = url_for(rule.endpoint)
-                links.append((url, rule.endpoint))
+                links.append((url, rule.endpoint, list(rule.methods - set(['HEAD', 'OPTIONS']))))
         return jsonify(links), 200
 
 
@@ -203,7 +205,13 @@ def configure_hooks(application):
     @application.before_request
     def authenticate_via_api_key():
 
+        # Default to try to get our API key
         api_key = request.headers.get("X-API-Key", None)
+
+        # IFTTT doesn't let us specify headers, so we gotta URL encode this bad-boi
+        if 'application/x-www-form-urlencoded' in request.headers.get('ACCEPT', []):
+            api_key = request.args.get('X-API-Key', None)
+
         if api_key:
 
             # Attempt to get a User instance for this key
@@ -213,8 +221,7 @@ def configure_hooks(application):
                 login_user(user, remember=True)
                 identity_changed.send(current_app._get_current_object(), identitiy=Identity(user.user_id))
 
-            else:
-                return jsonify({'error':'unknown API key'}), 403
+            return jsonify({'error':'unknown API key'}), 403
 
     # Set up our globals for each request
     @application.before_request
@@ -306,14 +313,14 @@ def configure_handlers(application):
     def error_403(err):
         current_app.logger.error("403 : {0} | {1}".format(request.url, err))
         if g.json:
-            return jsonify({})
+            jsonify({'message':'{0}'.format(err)}), 403
         return render_template("error/403.html"), 403
 
     @application.errorhandler(404)
     def error_404(err):
         current_app.logger.error("404 : {0} | {1}".format(request.url, err))
         if g.json:
-            return jsonify({})
+            jsonify({'message':'{0}'.format(err)}), 404
         return render_template("error/404.html"), 404
 
     @application.errorhandler(405)
@@ -340,5 +347,5 @@ def configure_handlers(application):
             debug = traceback.format_exc()
 
         if g.json:
-            return jsonify({}), 500
+            return jsonify({'message':'{0}'.format(err)}), 500
         return render_template("error/500.html", debug=debug), 500
