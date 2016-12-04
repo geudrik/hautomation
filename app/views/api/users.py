@@ -11,23 +11,11 @@ from flask_login import login_required
 
 from app.database import ApiKey
 
-users = Blueprint("users", __name__, url_prefix="/api/v1/users")
+users = Blueprint("users", __name__, url_prefix="/api/v1/user")
 
-@users.route("/apikeys", methods=["GET"])
-@users.route("/apikeys/", methods=["GET"])
+@users.route("/apikey", methods=["GET", "POST"])
 @login_required
 def apikey_list():
-
-    keys = ApiKey.filter_by(user_id=current_user.user_id).all()
-    if keys:
-        return jsonify({"items":[key.serialize() for key in keys]}), 200
-
-    return jsonify({"error":"No API keys found for your user. Perhaps you should create one?"}), 404
-
-@users.route("/apikey", methods=["POST", "PUT", "DELETE"], defaults={'key_id':None})
-@users.route("/apikey/<int:key_id>", methods=["POST", "PUT", "DELETE"])
-@login_required
-def apikey_manage(key_id):
 
     # We're creating a new key
     if request.method == "POST":
@@ -44,8 +32,18 @@ def apikey_manage(key_id):
 
         return jsonify({"error":"A server error was encountered while attempting to create the new api key"}), 500
 
+    keys = ApiKey.filter_by(user_id=current_user.user_id).all()
+    if keys:
+        return jsonify({"items":[key.serialize() for key in keys]}), 200
+
+    return jsonify({"error":"No API keys found for your user. Perhaps you should create one?"}), 404
+
+@users.route("/apikey/<int:key_id>", methods=["POST", "PUT", "DELETE"])
+@login_required
+def apikey_manage(key_id):
+
     # We're updating the description for this key
-    elif request.method == "PUT":
+    if request.method == "PUT":
 
         desc = request.form.get("description", None)
 

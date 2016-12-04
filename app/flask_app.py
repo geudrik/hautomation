@@ -131,12 +131,14 @@ def configure_blueprints(application):
     from views.web.homestack import homestack
     from views.web.auth import auth
     from views.api.users import users
+    from views.api.user_settings import user_settings
 
     # Make life easy on ourselves
     blueprints = [
         homestack,
         auth,
-        users
+        users,
+        user_settings
     ]
     for bp in blueprints:
         application.register_blueprint(bp)

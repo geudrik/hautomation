@@ -8,6 +8,36 @@
 {% endblock %}
 
 {% block body_content %}
+
+        <!-- Create bridge modal -->
+        <div class="modal fade hue-new-bridge-modal" tabindex="-1" role="dialog" aria-hidden="true">
+          <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span>
+                </button>
+                <h4 class="modal-title" id="myModalLabel2">Add Hue Bridge</h4>
+              </div>
+              <div class="modal-body">
+                <p>
+                  <input type="text" name="input_bridge_name" class="form-control" placeholder="Name this Bridge" required="" />
+                </p>
+                <p>
+                  <input type="text" name="input_bridge_address" class="form-control" placeholder="Bridge FQDN / IP Address" required="" />
+                </p>
+                <p>
+                  <input type="text" name="input_bridge_user" class="form-control" placeholder="Bridge API Key" required="" />
+                </p>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" id="button-submit-add-bridge-modal">Add bridge</button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
         <!-- page content -->
         <div class="right_col" role="main">
           <div class="">
@@ -20,6 +50,7 @@
 
             <div class="clearfix"></div>
 
+            <!-- API Key Table -->
             <div class="col-md-6 col-sm-6 col-xs-12">
                 <div class="x_panel">
                   <div class="x_title">
@@ -30,6 +61,32 @@
                   <div class="x_content">
                   <p>Click on a description to change its name. Naturally, click the X next to a key to delete that key</p>
                     <table class="table" id="table-api-keys">
+                      <thead>
+                        <tr>
+                          <th width="15px"></th>
+                          <th width="285px"></th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      </tbody>
+                    </table>
+
+                  </div>
+                </div>
+            </div>
+
+            <!-- Hue Bridge/User Table -->
+            <div class="col-md-6 col-sm-6 col-xs-12">
+                <div class="x_panel">
+                  <div class="x_title">
+                    <h2><i class="fa fa-lightbulb-o"></i> My Hue Bridges and Users</h2>
+                    <span class="pull-right"><button data-toggle="modal" data-target=".hue-new-bridge-modal" class="btn btn-xs btn-success">Add Hue Bridge</button></span>
+                    <div class="clearfix"></div>
+                  </div>
+                  <div class="x_content">
+                  <p>Click on a description to change its name. Naturally, click the X next to a bridge to remove it and all keys associated with it</p>
+                    <table class="table" id="table-hue-bridges">
                       <thead>
                         <tr>
                           <th width="15px"></th>

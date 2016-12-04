@@ -8,7 +8,42 @@ function fnInitListeners() {
         var key_id = row.attr('api-key-id');
 
         $.ajax({
-            url: "/api/v1/users/apikey/"+key_id,
+            url: "/api/v1/user/apikey/"+key_id,
+            type: 'DELETE',
+            success: function(data) {
+
+                // Remove our row from the UI
+                row.remove();
+
+                // Display a success notification
+                new PNotify({
+                    title: 'Success',
+                    text: data.message,
+                    type: 'success',
+                    styling: 'bootstrap3'
+                });
+
+            },
+            error: function(data) {
+                new PNotify({
+                    title: 'Error',
+                    text: data.responseJSON.error,
+                    type: 'error',
+                    styling: 'bootstrap3'
+                });
+            }
+        })
+
+    });
+
+    // Listener for clicking of one of the X to delete a Hue Bridge
+    $('[name=button-delete-hue-bridge]').on("click", function() {
+
+        var row = $(this).closest('tr');
+        var hue_bridge_id = row.attr('hue-bridge-id');
+
+        $.ajax({
+            url: "/api/v1/user/settings/hue/bridge/"+hue_bridge_id,
             type: 'DELETE',
             success: function(data) {
 
@@ -72,7 +107,7 @@ function fnInitListeners() {
                 var key_id = that.closest('tr').attr('api-key-id');
 
                 $.ajax({
-                    url: "/api/v1/users/apikey/"+key_id,
+                    url: "/api/v1/user/apikey/"+key_id,
                     type: "PUT",
                     data: { 'description': new_desc },
                     success: function(data) {
@@ -100,20 +135,44 @@ function fnInitListeners() {
         });
 
     });
+}
 
+function fnLoadHueBridges() {
+    $.ajax({
+        url: "/api/v1/user/settings/hue/bridge",
+        type: "GET",
+        success: function(data) {
+            $.each(data, function(key, value) {
+                $('#table-hue-bridges tbody').append(
+                    "<tr hue-bridge-id=\""+value.bridge_id+"\">"+
+                    "<th scope=\"row\"><i class=\"fa fa-close\" name=\"button-delete-hue-bridge\"></th>"+
+                    "<td name=\"table-hue-bridges-bridge-name\">"+key+"</td>"+
+                    "<td name=\"table-hue-bridges-bridge-address\">"+value.address+"</td>"+
+                    "</tr>"
+                );
+            })
 
+            // Rebind listeners
+            fnInitListeners();
+        },
+        error: function(data) {
+            new PNotify({
+                title: 'Error',
+                text: data.responseJSON.error,
+                type: 'error',
+                styling: 'bootstrap3'
+            });
+        }
 
+    })
 }
 
 // Page is loaded, f-f-fire it up
 $(document).ready(function() {
 
-    // Bind our listeners
-    fnInitListeners();
-
     // Get our API Keys
     $.ajax({
-        url: "/api/v1/users/apikeys",
+        url: "/api/v1/user/apikey",
         type: "GET",
         success: function(data) {
 
@@ -143,12 +202,17 @@ $(document).ready(function() {
 
     });
 
+    fnLoadHueBridges();
+
+    // Bind our listeners
+    fnInitListeners();
+
 });
 
 // Listener for clicking of the create API key button
 $('#button-new-api-key').on("click", function() {
     $.ajax({
-        url: "/api/v1/users/apikey",
+        url: "/api/v1/user/apikey",
         type: "POST",
         data: {'description':'My Brand New API Key'},
         success: function(data) {
@@ -165,6 +229,53 @@ $('#button-new-api-key').on("click", function() {
             // Reinit our listeners since we just added a row
             fnInitListeners();
         },
+        error: function(data) {
+            new PNotify({
+                title: 'Error',
+                text: data.responseJSON.error,
+                type: 'error',
+                styling: 'bootstrap3'
+            });
+        }
+    })
+
+});
+
+// Listener for clicking on the add hue bridge button
+$('#button-submit-add-bridge-modal').on("click", function() {
+
+    var bridge_name = $('[name=input_bridge_name]').val();
+    var bridge_addr = $('[name=input_bridge_address]').val();
+    var bridge_user = $('[name=input_bridge_user]').val();
+
+    if ( bridge_name.length === 0 || bridge_addr.length === 0 || bridge_user.length === 0) {
+        new PNotify({
+                title: 'Error',
+                text: "All fields are required when creating a new bridge!",
+                type: 'error',
+                styling: 'bootstrap3'
+            });
+        return;
+    }
+
+    $.ajax({
+        url: "/api/v1/user/settings/hue/bridge",
+        type: "POST",
+        data: {'bridge_name':bridge_name, 'bridge_address':bridge_addr, 'bridge_user':bridge_user},
+        success: function(data) {
+
+            $('#table-hue-bridges tbody').append(
+                "<tr hue-bridge-id=\""+data.bridge_id+"\">"+
+                "<th scope=\"row\"><i class=\"fa fa-close\" name=\"button-delete-hue-bridge\"></th>"+
+                "<td name=\"table-hue-bridges-bridge-name\">"+data.name+"</td>"+
+                "<td name=\"table-hue-bridges-bridge-address\">"+data.address+"</td>"+
+                "</tr>"
+            );
+
+            // Reinit our listeners since we just added a row
+            fnInitListeners();
+        },
+
         error: function(data) {
             new PNotify({
                 title: 'Error',
