@@ -132,13 +132,15 @@ def configure_blueprints(application):
     from views.web.auth import auth
     from views.api.users import users
     from views.api.user_settings import user_settings
+    from views.api.hue import hue
 
     # Make life easy on ourselves
     blueprints = [
         homestack,
         auth,
         users,
-        user_settings
+        user_settings,
+        hue
     ]
     for bp in blueprints:
         application.register_blueprint(bp)
@@ -211,8 +213,9 @@ def configure_hooks(application):
         api_key = request.headers.get("X-API-Key", None)
 
         # IFTTT doesn't let us specify headers, so we gotta URL encode this bad-boi
-        if 'application/x-www-form-urlencoded' in request.headers.get('ACCEPT', []):
-            api_key = request.args.get('X-API-Key', None)
+        if 'application/x-www-form-urlencoded' in request.headers.get('Content-Type', []):
+            api_key = request.form.get('X-API-Key', None)
+            application.logger.debug("URL Encoded API Request made for {}".format(api_key))
 
         if api_key:
 
@@ -221,7 +224,8 @@ def configure_hooks(application):
 
             if user:
                 login_user(user, remember=True)
-                identity_changed.send(current_app._get_current_object(), identitiy=Identity(user.user_id))
+                identity_changed.send(current_app._get_current_object(), identity=Identity(user.user_id))
+                application.logger.debug("Logged in user {}".format(user.username))
 
             return jsonify({'error':'unknown API key'}), 403
 
