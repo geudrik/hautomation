@@ -23,10 +23,9 @@ def all_lights():
     Toggle ALL lights, for all bridges, for this user
     """
 
-    on = request.args.get('on', None)
+    on = request.form.get('on', None)
 
     if on is None:
-        current_app.logger.warn("No action specified for all lighting")
         return jsonify({"message":"No action specified for all lights"}), 400
 
     current_app.logger.info("Action: {}".format(on))
@@ -36,23 +35,18 @@ def all_lights():
     if on.lower() == 'true':
         for bridge in bridges:
 
-            b = phue.Bridge(ip=bridge.address, username=bridge.user)
+            b = Bridge(ip=bridge.address, username=bridge.user)
             lights = AllLights(b)
 
             lights.on = True
 
-        current_app.logger.info("All lights turned ON")
-
-
     else:
         for bridge in bridges:
 
-            b = phue.Bridge(ip=bridge.address, username=bridge.user)
+            b = Bridge(ip=bridge.address, username=bridge.user)
             lights = AllLights(b)
 
             lights.on = False
-
-        current_app.logger.info("All lights turned OFF")
 
     return jsonify({'message':'All lights have been toggled'}), 200
 
