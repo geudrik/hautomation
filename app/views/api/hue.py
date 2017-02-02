@@ -24,29 +24,43 @@ def all_lights():
     """
 
     on = request.form.get('on', None)
-
     if on is None:
         return jsonify({"message":"No action specified for all lights"}), 400
 
-    current_app.logger.info("Action: {}".format(on))
-
     bridges = HueBridge.filter_by(user_id=current_user.user_id)
+    for bridge in bridges:
 
-    if on.lower() == 'true':
-        for bridge in bridges:
-
-            b = Bridge(ip=bridge.address, username=bridge.user)
-            lights = AllLights(b)
-
-            lights.on = True
-
-    else:
-        for bridge in bridges:
-
-            b = Bridge(ip=bridge.address, username=bridge.user)
-            lights = AllLights(b)
-
-            lights.on = False
+        b = Bridge(ip=bridge.address, username=bridge.user)
+        lights = AllLights(b)
+        lights.on = True if on.lower() == 'true' else False
 
     return jsonify({'message':'All lights have been toggled'}), 200
+
+@hue.route("/toggle/group/<groupname>", methods=["PUT"])
+@login_required
+def group_lights(groupname):
+
+    # Not sure why, but the google assistant/Maker on IFTTT doubles up on `the`
+    groupname = groupname.lower().replace('the ', '')
+
+    on = request.form.get('on', None)
+    if on is None:
+        return jsonify({"message":"No action specified for all lights in {}".format(groupname)}), 400
+
+    bridges = HueBridge.filter_by(user_id=current_user.user_id)
+    for bridge in bridges:
+
+        b = Bridge(ip=bridge.address, username=bridge.user)
+        lights = b.get_light_objects()
+        group = b.get_group(groupname.title())
+        if not group:
+            continue
+
+        for light_id in group['lights']:
+            current_app.logger.debug("`on` : {} | light_id : {}".format(on, light_id))
+            lights[light_id].on = True if on.lower() == 'true' else False
+
+    return jsonify({'message':'All lights have been toggled'}), 200
+
+
 
